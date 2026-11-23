@@ -48,7 +48,6 @@
   };
   const fmtNum = (n) => n.toLocaleString("uz-UZ").replace(/,/g, " ");
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const brief = (t) => (t.length > 140 ? t.slice(0, 130).replace(/\s+\S*$/, "") + " …" : t);
   const secShort = (s) => s.title.replace(/\s*\(.*?\)\s*$/, "");
 
   /* ================= SAQLANADIGAN HOLAT ================= */
@@ -376,7 +375,6 @@
       box.append(b);
     });
     if (chosen != null) paintAnswer(false);
-    else { $("feedback").hidden = true; }
 
     updateBar();
     const card = $("qcard");
@@ -402,10 +400,6 @@
     const i = session.cur;
     const q = Q.get(session.qids[i]);
     const chosen = session.answers[i];
-    const right = chosen === q.ans;
-    const perm = session.perms[i];
-    const letterOf = (orig) => LETTERS[perm.indexOf(orig)];
-
     document.querySelectorAll("#options .opt").forEach((b) => {
       const orig = Number(b.dataset.orig);
       b.disabled = true;
@@ -422,26 +416,6 @@
       }
       if (orig === chosen) b.classList.add("is-picked");
     });
-
-    const fb = $("feedback");
-    fb.hidden = false;
-    fb.className = "feedback " + (right ? "ok" : "bad");
-    fb.innerHTML = "";
-    const icon = el("span", "fb-icon");
-    icon.innerHTML = right
-      ? '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>'
-      : '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>';
-    const body = el("div", "fb-body");
-    if (right) {
-      body.append(el("b", null, "To‘g‘ri!"), el("span", null, `Siz ${letterOf(chosen)} variantni tanladingiz — bu to‘g‘ri javob.`));
-    } else {
-      body.append(
-        el("b", null, "Noto‘g‘ri javob"),
-        el("span", null, `Siz tanlagan: ${letterOf(chosen)}) ${brief(q.opts[chosen])}`),
-        el("span", null, `To‘g‘ri javob: ${letterOf(q.ans)}) ${brief(q.opts[q.ans])}`)
-      );
-    }
-    fb.append(icon, body);
   }
 
   function updateBar() {
