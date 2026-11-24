@@ -1,7 +1,11 @@
 """Word (.docx) fayldagi test savollarini questions.js ga aylantiradi.
 
 Ishlatish:
-    python3 tools/docx_to_questions.py "Test_savollari_toplami.docx" questions.js
+    python3 tools/docx_to_questions.py questions.js "Test_savollari_toplami.docx" \
+        "Test_savollari_chiqish_tayyor.docx::Chiqish test savollari"
+
+Bir nechta fayl berish mumkin. "fayl.docx::Nom" ko'rinishida berilsa, shu fayldagi
+barcha savollar "Nom" degan bitta bo'limga birlashtiriladi (raqamlar ketma-ket).
 
 Format: Heading1 uslubidagi sarlavha = bo'lim, "N. savol" = savol,
 "A) ... D)" = variantlar, oldida "+" bo'lgan variant = to'g'ri javob.
@@ -64,15 +68,36 @@ def parse(path):
     return sections, problems
 
 
+def load(arg):
+    path, _, merged_title = arg.partition("::")
+    sections, problems = parse(path)
+    if merged_title:
+        qs = [q for sec in sections for q in sec["q"]]
+        for i, q in enumerate(qs, 1):
+            q[0] = i
+        sections = [{"id": 0, "title": merged_title.strip(), "q": qs}]
+    return sections, [f"{path}: {p}" for p in problems]
+
+
 def main():
-    src, dst = sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "questions.js"
-    sections, problems = parse(src)
+    if len(sys.argv) < 3 or not sys.argv[1].endswith(".js"):
+        sys.exit(__doc__)
+    dst, sources = sys.argv[1], sys.argv[2:]
+    sections, problems = [], []
+    for arg in sources:
+        secs, probs = load(arg)
+        sections += secs
+        problems += probs
+    for i, sec in enumerate(sections, 1):
+        sec["id"] = i
     if problems:
         print("Diqqat, quyidagi savollarda muammo bor:", *problems, sep="\n  ")
     payload = json.dumps({"sections": sections}, ensure_ascii=False, separators=(",", ":"))
     with open(dst, "w", encoding="utf-8") as f:
         f.write("/* Avtomatik yaratilgan: tools/docx_to_questions.py */\n")
         f.write("window.TEST_DATA = " + payload + ";\n")
+    for sec in sections:
+        print(f"  {sec['id']}. {sec['title']} — {len(sec['q'])} ta savol")
     total = sum(len(s["q"]) for s in sections)
     print(f"{len(sections)} ta bo'lim, {total} ta savol -> {dst}")
 

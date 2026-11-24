@@ -75,8 +75,12 @@
     countRandom: 30,
     shuffleQ: true,
     shuffleO: true,
-  }, store.get("cfg", {}));
+  }, store.get("cfg", { secIds: null }));
+  if (!("secIds" in cfg)) cfg.secIds = [1, 2, 3, 4, 5, 6, 7]; // birinchi versiyada 7 ta bo'lim bo'lgan
   cfg.multi = cfg.multi.filter((id) => SEC_BY_ID.has(id));
+  // Yangi bo'lim qo'shilgan bo'lsa, tasodifiy rejimda u ham avtomatik belgilansin
+  if (cfg.secIds) SECTIONS.forEach((s) => { if (!cfg.secIds.includes(s.id) && !cfg.multi.includes(s.id)) cfg.multi.push(s.id); });
+  cfg.secIds = SECTIONS.map((s) => s.id);
   if (!SEC_BY_ID.has(cfg.section) && SECTIONS[0]) cfg.section = SECTIONS[0].id;
 
   function saveCfg() { store.set("cfg", cfg); }
